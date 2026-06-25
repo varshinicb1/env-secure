@@ -1,0 +1,109 @@
+<h2>🔍 Scan your codebase for leaked secrets before they become a headline</h2>
+
+<p><strong>env-secure</strong> is a standalone CLI that scans your entire codebase for API keys, passwords, tokens, and other secrets — then generates a hardened <code>.env.example</code> and an encrypted vault so you never commit credentials to git again.</p>
+
+<p>One command. Instant security audit. Zero false positives engineered.</p>
+
+<hr>
+
+<h3>🚨 What it detects (60+ patterns across 8 categories)</h3>
+
+<table>
+<tr><th>Category</th><th>Examples</th></tr>
+<tr><td>☁️ Cloud</td><td>AWS keys, Google API keys, DigitalOcean tokens, Azure, Heroku, Vercel, Netlify</td></tr>
+<tr><td>🔧 Version Control</td><td>GitHub tokens (ghp_), GitLab tokens (glpat-), npmRC auth</td></tr>
+<tr><td>💳 Payments</td><td>Stripe live/test keys, Shopify tokens, PayPal secrets</td></tr>
+<tr><td>💬 Communication</td><td>Slack tokens (xoxb-), Discord bot tokens, Twilio SID + Auth</td></tr>
+<tr><td>📧 Email</td><td>SendGrid, Mailgun, Mailchimp, Postmark, Resend API keys</td></tr>
+<tr><td>🗄️ Database</td><td>MongoDB URIs, PostgreSQL, MySQL, Redis, Supabase URL + anon key</td></tr>
+<tr><td>🔐 Auth</td><td>JWTs, Clerk keys, Auth0 secrets, Docker auth</td></tr>
+<tr><td>📊 Monitoring</td><td>Sentry DSNs, Datadog API keys</td></tr>
+<tr><td>⚠️ Generic</td><td>Private keys (RSA, DSA, EC), bearer tokens, password fields, env var assignments</td></tr>
+</table>
+
+<h3>⚡ Features</h3>
+
+<ul>
+<li><strong>60+ detection patterns</strong> — curated regex library for every major service</li>
+<li><strong>Entropy analysis</strong> — Shannon entropy filtering eliminates false positives</li>
+<li><strong>Gitignore-aware</strong> — automatically skips node_modules, .git, build artifacts</li>
+<li><strong>Binary-safe</strong> — doesn't scan images, videos, archives, or compiled files</li>
+<li><strong>Smart dedup</strong> — nearby matches merged, highest-confidence result kept</li>
+<li><strong>Secret masking</strong> — all output safely masked (shows first 6 chars only)</li>
+<li><strong>Multiple output formats</strong> — terminal, JSON, GitHub Actions markdown</li>
+<li><strong>CI/CD ready</strong> — auto-detects CI environments, works without TTY</li>
+<li><strong>.env.example generator</strong> — extracts env var names, generates ready-to-fill template</li>
+<li><strong>Encrypted vault</strong> — AES-256-GCM encrypts discovered secrets with your passphrase</li>
+<li><strong>Merge mode</strong> — combines scan results with existing .env.example files</li>
+</ul>
+
+<h3>📦 What you get</h3>
+
+<p>The download includes standalone binaries for:</p>
+<ul>
+<li>🪟 Windows x64 (.exe)</li>
+<li>🍎 macOS (ARM64 + Intel)</li>
+<li>🐧 Linux (x64 + ARM64)</li>
+</ul>
+
+<p>No Node.js, Python, or Docker required. Download and run.</p>
+
+<hr>
+
+<h3>🎯 Use cases</h3>
+
+<ul>
+<li><strong>Pre-commit hook</strong> — scan before every commit to catch leaked credentials</li>
+<li><strong>CI/CD pipeline</strong> — run in GitHub Actions to block PRs with exposed keys</li>
+<li><strong>Security audit</strong> — scan legacy codebases for forgotten API keys</li>
+<li><strong>Onboarding</strong> — generate .env.example for new team members</li>
+<li><strong>Incident response</strong> — quickly find where a leaked key was used</li>
+</ul>
+
+<hr>
+
+<h3>💻 Quick start</h3>
+
+<pre><code># Scan current directory
+env-secure
+
+# Scan specific directory with JSON output
+env-secure --dir ./my-project --json
+
+# Generate .env.example from discovered secrets
+env-secure --env
+
+# Create encrypted vault
+env-secure --vault
+
+# Full pipeline: scan + env + vault
+env-secure --env --vault
+
+# CI mode (auto-detected, no prompts)
+env-secure --ci
+
+# GitHub Actions compatible output
+env-secure --ci-matrix</code></pre>
+
+<hr>
+
+<h3>❓ FAQ</h3>
+
+<p><strong>How is this different from git-secrets or truffleHog?</strong><br>
+env-secure is a single static binary (no dependencies), has 60+ curated patterns, generates .env.example files, and creates an encrypted vault — all in one tool.</p>
+
+<p><strong>Does it upload my code anywhere?</strong><br>
+No. All scanning is done locally. Nothing leaves your machine.</p>
+
+<p><strong>What about false positives?</strong><br>
+We use entropy analysis, pattern-specific filtering, and smart deduplication to minimize false positives. You can adjust the entropy threshold with --entropy-threshold.</p>
+
+<p><strong>Can I add custom patterns?</strong><br>
+The patterns library is open-source and extensible. The source code is included.</p>
+
+<p><strong>Is there a free trial?</strong><br>
+env-secure is $12 lifetime — no subscriptions, no trials, no hidden fees.</p>
+
+<hr>
+
+<p style="font-size: 0.9em; color: #666;">MIT License · Source code included · Built with ❤️ by a solo developer</p>

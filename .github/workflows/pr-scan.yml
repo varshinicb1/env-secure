@@ -1,0 +1,127 @@
+name: PR Security Scan
+
+on:
+  pull_request:
+    branches: [master, main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  scan:
+    name: Scan for leaked secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run env-secure scan
+        id: scan
+        shell: bash
+        run: |
+          set +e
+
+          # Initialize output file
+          echo "## Security Scan Results" > scan-output.md
+          echo "" >> scan-output.md
+
+          # Run env-secure in CI mode with GitHub Actions matrix output
+          bun run src/index.ts --ci --ci-matrix 2>&1 | tee scan-raw.txt
+          SCAN_EXIT=${PIPESTATUS[0]}
+
+          # Handle scan command failure
+          if [ "$SCAN_EXIT" -ne 0 ]; then
+            echo "Scan command failed with exit code $SCAN_EXIT" >> scan-output.md
+            echo "" >> scan-output.md
+            echo "The scanner encountered an error. Check the workflow logs for details." >> scan-output.md
+          fi
+
+          # Handle empty output
+          if [ ! -s scan-raw.txt ]; then
+            echo "No scan output was produced." >> scan-output.md
+            echo "" >> scan-output.md
+            echo "has_high=false" >> $GITHUB_OUTPUT
+            cat scan-output.md
+            exit 0
+          fi
+
+          # Check for high-severity findings
+          if grep -qE "High.*[1-9]" scan-raw.txt 2>/dev/null; then
+            echo "High-confidence secrets detected!" >> scan-output.md
+            echo "" >> scan-output.md
+            echo "has_high=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_high=false" >> $GITHUB_OUTPUT
+          fi
+
+          if grep -qE "Medium.*[1-9]" scan-raw.txt 2>/dev/null; then
+            echo "Medium-confidence secrets detected." >> scan-output.md
+            echo "" >> scan-output.md
+          fi
+
+          # Append the matrix table
+          if grep -qE "^\|" scan-raw.txt 2>/dev/null; then
+            grep -E "^\|" scan-raw.txt >> scan-output.md
+            echo "" >> scan-output.md
+          fi
+
+          # Append summary lines (non-table output)
+          echo "Details:" >> scan-output.md
+          echo '```' >> scan-output.md
+          grep -vE "^\|" scan-raw.txt | head -60 >> scan-output.md
+          echo '```' >> scan-output.md
+
+          cat scan-output.md
+
+      - name: Post comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('scan-output.md', 'utf-8');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('Security Scan Results')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body,
+              });
+            }
+
+      - name: Fail if high-severity secrets found
+        if: steps.scan.outputs.has_high == 'true'
+        run: |
+          echo "HIGH-SEVERITY SECRETS DETECTED IN THIS PR!"
+          echo "Remove exposed credentials before merging."
+          exit 1
